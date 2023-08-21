@@ -1,6 +1,17 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 import sys
+from warnings import warn
+
+"""
+" use case:
+    python3 -W ignore FanshaweWebAdvisor.py ${username} ${password} ${semester}
+
+    username: your username for Fanshawe WebAdvisor
+    password: your password for Fanshawe WebAdvisor
+    semester: such as 23F or 23S
+"""
+
 
 class FanshaweCalendar(list):
     def __init__(self, titles, items):
@@ -23,7 +34,7 @@ class FanshaweCalendar(list):
             if href.text == text:
                 href.click()
                 return True
-        print(f"Warrning: {text} not found")
+        warn(f"{text} not found")
         return False
 
     @staticmethod
@@ -34,28 +45,28 @@ class FanshaweCalendar(list):
             driver.get(url)
             return driver
         except:
-            print("Warrning: Firefox driver not found")
+            warn(" Firefox driver not found")
 
         try:
             driver = webdriver.Chrome()
             driver.get(url)
             return driver
         except:
-            print("Warrning: Chrome driver not found")
+            warn(" Chrome driver not found")
 
         try:
             driver = webdriver.Edge()
             driver.get(url)
             return driver
         except:
-            print("Warrning: Edge driver not found")
+            warn(" Edge driver not found")
 
         try:
             driver = webdriver.safari()
             driver.get(url)
             return driver
         except:
-            print("Warrning: Safari driver not found")
+            warn(" Safari driver not found")
 
         raise Exception("No driver found")
 
@@ -69,7 +80,7 @@ class FanshaweCalendar(list):
             form.submit()
             return True
         except:
-            print("Warrning: Login failed")
+            warn(" Login failed")
             return False
 
     @staticmethod
@@ -82,9 +93,8 @@ class FanshaweCalendar(list):
             select.select_by_value(semester)
             form.submit()
             return True
-        except e:
-            print("Warrning: Semester not found")
-            print(e)
+        except:
+            warn(" Semester not found")
             return False
 
     @classmethod

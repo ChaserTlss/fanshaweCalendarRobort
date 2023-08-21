@@ -5,6 +5,7 @@ from warnings import warn
 
 """
 " use case:
+    pip install selenium
     python3 -W ignore FanshaweWebAdvisor.py ${username} ${password} ${semester}
 
     username: your username for Fanshawe WebAdvisor
@@ -24,7 +25,11 @@ class FanshaweCalendar(list):
         super().__init__(classInfos)
 
     def __str__(self):
-        return '\n'.join(['\t'.join([classInfo[key] for key in classInfo if key != 'Credits']) for classInfo in self])
+        return '\n'.join([concatTab(classInfo) for classInfo in self])
+
+    @staticmethod
+    def concatTab(classInfo):
+        return '\t'.join([classInfo[k] for k in classInfo if k != 'Credits'])
 
     @staticmethod
     def splitClassInfo(classInfo):
@@ -116,6 +121,10 @@ class FanshaweWebAdvisor:
         except:
             warn(" Semester not found")
             return False
+    @staticmethod
+    def tr2List(tr):
+        tds = tr.find_elements(By.TAG_NAME, "td")
+        return [td.text for td in tds if td.text != ""]
 
     @classmethod
     def getCalendarFromFWA(cls, username, password, semster):
@@ -135,8 +144,7 @@ class FanshaweWebAdvisor:
         titles = [th.text for th in trs[0].find_elements(By.TAG_NAME, "th")
                   if th.text != ""]
         # get items
-        # TODO: this line is hard to read, need to be refactored
-        items = [[td.text for td in tr.find_elements(By.TAG_NAME, "td") if td.text != ""] for tr in trs[1:]]
+        items = [tr2list(tr) for tr in trs[1:]]
         driver.close()
 
         return FanshaweCalendar(titles, items)

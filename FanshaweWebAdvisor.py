@@ -15,9 +15,29 @@ from warnings import warn
 
 class FanshaweCalendar(list):
     def __init__(self, titles, items):
-        li = [ dict(zip(titles, item)) for item in items]
-        super().__init__(li)
+        classInfos = [dict(zip(titles, item)) for item in items]
+        newClassInfos = []
+        for classInfo in classInfos:
+            if '\n' in classInfo['Class Start & End Dates']:
+                newClassInfos.append(type(self).splitClassInfo(classInfo))
+        classInfos += newClassInfos
+        super().__init__(classInfos)
 
+    def __str__(self):
+        return '\n'.join(['\t'.join([classInfo[key] for key in classInfo if key != 'Credits']) for classInfo in self])
+
+    @staticmethod
+    def splitClassInfo(classInfo):
+        newClassInfo = classInfo.copy()
+        for key in classInfo:
+            if '\n' in classInfo[key]:
+                classInfo[key] = classInfo[key].split('\n')[0]
+        for key in newClassInfo:
+            if '\n' in newClassInfo[key]:
+                newClassInfo[key] = newClassInfo[key].split('\n')[-1]
+        return newClassInfo
+
+class FanshaweWebAdvisor:
     def deley(function):
         def wrapper(*args, **kwargs):
             import time
@@ -98,30 +118,34 @@ class FanshaweCalendar(list):
             return False
 
     @classmethod
-    def getCalendarFromFWA(cls, username, password):
+    def getCalendarFromFWA(cls, username, password, semster):
         URL = 'https://webadvisor.fanshawec.ca/'
         driver = cls.getFWA(URL)
+        # first try to log out other user
         cls.clickHrefFWA(driver, "Log Out")
         cls.clickHrefFWA(driver, "Log In")
         cls.loginFWA(driver, username, password)
         cls.clickHrefFWA(driver, "Students")
         cls.clickHrefFWA(driver, "Class Schedule List")
-        cls.selectSemesterFWA(driver, "23F")
+        cls.selectSemesterFWA(driver, semster)
         #get trs
-        trs = driver.find_elements(By.TAG_NAME, "tbody")[-1].find_elements(By.TAG_NAME, "tr")
+        tbody = driver.find_elements(By.TAG_NAME, "tbody")[-1]
+        trs = tbody.find_elements(By.TAG_NAME, "tr")
         #get titles
-        titles = [th.text for th in trs[0].find_elements(By.TAG_NAME, "th") if th.text != ""]
-        #get items
+        titles = [th.text for th in trs[0].find_elements(By.TAG_NAME, "th")
+                  if th.text != ""]
+        # get items
+        # TODO: this line is hard to read, need to be refactored
         items = [[td.text for td in tr.find_elements(By.TAG_NAME, "td") if td.text != ""] for tr in trs[1:]]
         driver.close()
 
-        return cls(titles, items)
-
+        return FanshaweCalendar(titles, items)
 
 
 if __name__ == "__main__":
-    d = FanshaweCalendar.getCalendarFromFWA(sys.argv[1], sys.argv[2])
-    for x in d:
-        print(x)
+    calendar = FanshaweWebAdvisor.getCalendarFromFWA(sys.argv[1],
+                                                     sys.argv[2],
+                                                     sys.argv[3])
+    print(calendar)
 
 

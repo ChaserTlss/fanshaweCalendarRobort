@@ -76,7 +76,6 @@ class FanshaweWebAdvisor:
             warn(" Edge driver not found")
 
         raise Exception("No driver found")
-    
 
     def deley(function):
         def wrapper(*args, **kwargs):
@@ -114,7 +113,7 @@ class FanshaweWebAdvisor:
             warn(" Login failed")
             return False
 
-    def waitUserLogin(self):
+    def waitUserActive(self):
         url = self.driver.current_url
         WebDriverWait(self.driver, 60*5).until(EC.url_changes(url))
 
@@ -130,10 +129,6 @@ class FanshaweWebAdvisor:
         except:
             warn(" Semester not found")
             return False
-
-    def waitSemester(self):
-        url = self.driver.current_url
-        WebDriverWait(self.driver, 60*5).until(EC.url_changes(url))
 
     @staticmethod
     def tr2List(tr):
@@ -166,11 +161,11 @@ if __name__ == "__main__":
         web.clickHref("Log Out")
         web.clickHref("Log In")
         web.alert("please use you password to login")
-        web.waitUserLogin()
+        web.waitUserActive()
         web.clickHref("Students")
         web.clickHref("Class Schedule List")
         web.alert("please select a semester")
-        web.waitSemester()
+        web.waitUserActive()
         titles, items = web.parseCalendar()
 
     calendar = FanshaweCalendar(titles, items)

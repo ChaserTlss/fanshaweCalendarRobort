@@ -45,19 +45,51 @@ class FanshaweCalendar(list):
                 newClassInfo[key] = newClassInfo[key].split('\n')[-1]
         return newClassInfo
 
+
 class FanshaweWebAdvisor:
+    def __init__(self, url):
+        try:
+            self.driver = webdriver.safari()
+            self.driver.get(url)
+            return
+        except:
+            warn(" Safari driver not found")
+
+        try:
+            self.driver = webdriver.Chrome()
+            self.driver.get(url)
+            return
+        except:
+            warn(" Chrome driver not found")
+
+        try:
+            self.driver = webdriver.Firefox()
+            self.driver.get(url)
+            return
+        except:
+            warn(" Firefox driver not found")
+
+        try:
+            self.driver = webdriver.Edge()
+            self.driver.get(url)
+            return
+        except:
+            warn(" Edge driver not found")
+
+        raise Exception("No driver found")
+    
+
     def deley(function):
         def wrapper(*args, **kwargs):
             import time
             ret = function(*args, **kwargs)
-            time.sleep(5)
+            time.sleep(1)
             return ret
         return wrapper
 
-    @staticmethod
     @deley
-    def clickHrefFWA(driver, text):
-        hreflist = driver.find_elements(By.TAG_NAME, "a")
+    def clickHref(self, text):
+        hreflist = self.driver.find_elements(By.TAG_NAME, "a")
         for href in hreflist:
             if href.text == text:
                 href.click()
@@ -65,51 +97,16 @@ class FanshaweWebAdvisor:
         warn(f"{text} not found")
         return False
 
-    @staticmethod
-    @deley
-    def getFWA(url):
-        try:
-            driver = webdriver.safari()
-            driver.get(url)
-            return driver
-        except:
-            warn(" Safari driver not found")
-
-        try:
-            driver = webdriver.Chrome()
-            driver.get(url)
-            return driver
-        except:
-            warn(" Chrome driver not found")
-
-        try:
-            driver = webdriver.Firefox()
-            driver.get(url)
-            return driver
-        except:
-            warn(" Firefox driver not found")
-
-        try:
-            driver = webdriver.Edge()
-            driver.get(url)
-            return driver
-        except:
-            warn(" Edge driver not found")
-
-        raise Exception("No driver found")
-    
-    @staticmethod
-    def alert(driver, string):
+    def alert(self, string):
         #build a alert
         #print a alert in a new window
         warn(string)
         return
 
-    @staticmethod
     @deley
-    def loginFWA(driver, username, password):
+    def login(self, username, password):
         try:
-            form = driver.find_element(By.TAG_NAME, "form")
+            form = self.driver.find_element(By.TAG_NAME, "form")
             form.find_element(By.NAME, "USER.NAME").send_keys(username)
             form.find_element(By.NAME, "CURR.PWD").send_keys(password)
             form.submit()
@@ -117,16 +114,15 @@ class FanshaweWebAdvisor:
         except:
             warn(" Login failed")
             return False
-    @staticmethod
-    def waitUserLoginFwa(driver):
-        url = driver.current_url
-        WebDriverWait(driver, 60*5).until(EC.url_changes(url))
 
-    @staticmethod
+    def waitUserLogin(self):
+        url = self.driver.current_url
+        WebDriverWait(self.driver, 60*5).until(EC.url_changes(url))
+
     @deley
-    def selectSemesterFWA(driver, semester):
+    def selectSemester(self, semester):
         try:
-            form = driver.find_element(By.TAG_NAME, "form")
+            form = self.driver.find_element(By.TAG_NAME, "form")
             from selenium.webdriver.support.ui import Select
             select = Select(form.find_element(By.NAME, "VAR4"))
             select.select_by_value(semester)
@@ -136,44 +132,50 @@ class FanshaweWebAdvisor:
             warn(" Semester not found")
             return False
 
-    @staticmethod
-    def waitSemesterFwa(driver):
-        url = driver.current_url
-        WebDriverWait(driver, 60*5).until(EC.url_changes(url))
+    def waitSemester(self):
+        url = self.driver.current_url
+        WebDriverWait(self.driver, 60*5).until(EC.url_changes(url))
 
     @staticmethod
     def tr2List(tr):
         tds = tr.find_elements(By.TAG_NAME, "td")
         return [td.text for td in tds if td.text != ""]
 
-    @classmethod
-    def getCalendarFromFWA(cls):
-        URL = 'https://webadvisor.fanshawec.ca/'
-        driver = cls.getFWA(URL)
-        # first try to log out other user
-        cls.clickHrefFWA(driver, "Log Out")
-        cls.clickHrefFWA(driver, "Log In")
-        cls.alert(driver, "please use you password to login")
-        cls.waitUserLoginFwa(driver)
-        cls.clickHrefFWA(driver, "Students")
-        cls.clickHrefFWA(driver, "Class Schedule List")
-        cls.alert(driver, "please select a semester")
-        cls.waitSemesterFwa(driver)
+    def parseCalendar(self):
         #get trs
-        tbody = driver.find_elements(By.TAG_NAME, "tbody")[-1]
+        tbody = self.driver.find_elements(By.TAG_NAME, "tbody")[-1]
         trs = tbody.find_elements(By.TAG_NAME, "tr")
         #get titles
-        titles = [th.text for th in trs[0].find_elements(By.TAG_NAME, "th")
-                  if th.text != ""]
+        ths = trs[0].find_elements(By.TAG_NAME, "th")
+        titles = [th.text for th in ths if th.text != ""]
         # get items
-        items = [cls.tr2List(tr) for tr in trs[1:]]
-        driver.close()
+        items = [self.tr2List(tr) for tr in trs[1:]]
+        return titles, items
 
-        return FanshaweCalendar(titles, items)
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.driver.close()
 
 
 if __name__ == "__main__":
-    calendar = FanshaweWebAdvisor.getCalendarFromFWA()
+    URL = 'https://webadvisor.fanshawec.ca/'
+
+    with FanshaweWebAdvisor(URL) as web:
+        # first try to log out other user
+        web.clickHref("Log Out")
+        web.clickHref("Log In")
+        web.alert("please use you password to login")
+        web.waitUserLogin()
+        web.clickHref("Students")
+        web.clickHref("Class Schedule List")
+        web.alert("please select a semester")
+        web.waitSemester()
+        titles, items = web.parseCalendar()
+
+    calendar = FanshaweCalendar(titles, items)
+
     print(calendar)
 
 

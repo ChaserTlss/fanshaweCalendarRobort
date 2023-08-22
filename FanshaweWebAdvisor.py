@@ -9,11 +9,10 @@ from warnings import warn
 """
 " use case:
     pip install selenium
-    python3 -W ignore FanshaweWebAdvisor.py ${username} ${password} ${semester}
-
-    username: your username for Fanshawe WebAdvisor
-    password: your password for Fanshawe WebAdvisor
-    semester: such as 23F or 23S
+    python3 -W ignore FanshaweWebAdvisor.py
+  
+  enter your username and password at login web page
+  select a semester at semester web page
 """
 
 

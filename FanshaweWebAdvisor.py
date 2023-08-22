@@ -1,5 +1,8 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.alert import Alert
 import sys
 from warnings import warn
 
@@ -25,7 +28,7 @@ class FanshaweCalendar(list):
         super().__init__(classInfos)
 
     def __str__(self):
-        return '\n'.join([concatTab(classInfo) for classInfo in self])
+        return '\n'.join([self.concatTab(classInfo) for classInfo in self])
 
     @staticmethod
     def concatTab(classInfo):
@@ -66,11 +69,11 @@ class FanshaweWebAdvisor:
     @deley
     def getFWA(url):
         try:
-            driver = webdriver.Firefox()
+            driver = webdriver.safari()
             driver.get(url)
             return driver
         except:
-            warn(" Firefox driver not found")
+            warn(" Safari driver not found")
 
         try:
             driver = webdriver.Chrome()
@@ -80,20 +83,27 @@ class FanshaweWebAdvisor:
             warn(" Chrome driver not found")
 
         try:
+            driver = webdriver.Firefox()
+            driver.get(url)
+            return driver
+        except:
+            warn(" Firefox driver not found")
+
+        try:
             driver = webdriver.Edge()
             driver.get(url)
             return driver
         except:
             warn(" Edge driver not found")
 
-        try:
-            driver = webdriver.safari()
-            driver.get(url)
-            return driver
-        except:
-            warn(" Safari driver not found")
-
         raise Exception("No driver found")
+    
+    @staticmethod
+    def alert(driver, string):
+        #build a alert
+        #print a alert in a new window
+        warn(string)
+        return
 
     @staticmethod
     @deley
@@ -107,6 +117,10 @@ class FanshaweWebAdvisor:
         except:
             warn(" Login failed")
             return False
+    @staticmethod
+    def waitUserLoginFwa(driver):
+        url = driver.current_url
+        WebDriverWait(driver, 60*5).until(EC.url_changes(url))
 
     @staticmethod
     @deley
@@ -121,22 +135,30 @@ class FanshaweWebAdvisor:
         except:
             warn(" Semester not found")
             return False
+
+    @staticmethod
+    def waitSemesterFwa(driver):
+        url = driver.current_url
+        WebDriverWait(driver, 60*5).until(EC.url_changes(url))
+
     @staticmethod
     def tr2List(tr):
         tds = tr.find_elements(By.TAG_NAME, "td")
         return [td.text for td in tds if td.text != ""]
 
     @classmethod
-    def getCalendarFromFWA(cls, username, password, semster):
+    def getCalendarFromFWA(cls):
         URL = 'https://webadvisor.fanshawec.ca/'
         driver = cls.getFWA(URL)
         # first try to log out other user
         cls.clickHrefFWA(driver, "Log Out")
         cls.clickHrefFWA(driver, "Log In")
-        cls.loginFWA(driver, username, password)
+        cls.alert(driver, "please use you password to login")
+        cls.waitUserLoginFwa(driver)
         cls.clickHrefFWA(driver, "Students")
         cls.clickHrefFWA(driver, "Class Schedule List")
-        cls.selectSemesterFWA(driver, semster)
+        cls.alert(driver, "please select a semester")
+        cls.waitSemesterFwa(driver)
         #get trs
         tbody = driver.find_elements(By.TAG_NAME, "tbody")[-1]
         trs = tbody.find_elements(By.TAG_NAME, "tr")
@@ -144,16 +166,14 @@ class FanshaweWebAdvisor:
         titles = [th.text for th in trs[0].find_elements(By.TAG_NAME, "th")
                   if th.text != ""]
         # get items
-        items = [tr2list(tr) for tr in trs[1:]]
+        items = [cls.tr2List(tr) for tr in trs[1:]]
         driver.close()
 
         return FanshaweCalendar(titles, items)
 
 
 if __name__ == "__main__":
-    calendar = FanshaweWebAdvisor.getCalendarFromFWA(sys.argv[1],
-                                                     sys.argv[2],
-                                                     sys.argv[3])
+    calendar = FanshaweWebAdvisor.getCalendarFromFWA()
     print(calendar)
 
 

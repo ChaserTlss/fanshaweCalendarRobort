@@ -24,6 +24,11 @@ class FanshaweCalendar(list):
             if '\n' in classInfo['Class Start & End Dates']:
                 newClassInfos.append(type(self).splitClassInfo(classInfo))
         classInfos += newClassInfos
+        # this is interesting, in python we can use super() at last
+        # but in java or other language, we must use super() at first
+        # so, if we want to do simular things in java, we must use
+        # the factory pattern, but it is not neessary in python
+        # init the list
         super().__init__(classInfos)
 
     def __str__(self):
@@ -31,6 +36,7 @@ class FanshaweCalendar(list):
 
     @staticmethod
     def concatTab(classInfo):
+        # fliter out the key value equal to 'Credits'
         return '\t'.join([classInfo[k] for k in classInfo if k != 'Credits'])
 
     @staticmethod
@@ -102,33 +108,9 @@ class FanshaweWebAdvisor:
         return
 
     @deley
-    def login(self, username, password):
-        try:
-            form = self.driver.find_element(By.TAG_NAME, "form")
-            form.find_element(By.NAME, "USER.NAME").send_keys(username)
-            form.find_element(By.NAME, "CURR.PWD").send_keys(password)
-            form.submit()
-            return True
-        except:
-            warn(" Login failed")
-            return False
-
     def waitUserActive(self):
         url = self.driver.current_url
         WebDriverWait(self.driver, 60*5).until(EC.url_changes(url))
-
-    @deley
-    def selectSemester(self, semester):
-        try:
-            form = self.driver.find_element(By.TAG_NAME, "form")
-            from selenium.webdriver.support.ui import Select
-            select = Select(form.find_element(By.NAME, "VAR4"))
-            select.select_by_value(semester)
-            form.submit()
-            return True
-        except:
-            warn(" Semester not found")
-            return False
 
     @staticmethod
     def tr2List(tr):
